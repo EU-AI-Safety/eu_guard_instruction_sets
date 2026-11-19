@@ -157,10 +157,6 @@ The generator defaults to:
 
 The script creates the SFT split and then builds DPO files from the corresponding train, validation, and test lists, keeping SFT/DPO membership aligned for that run.
 
-The split function groups rows by `prompt_id` before assigning groups to splits. However, the inspected `assign_prompt_ids()` creates the ID using `meta_id`, augmentation, variant index **and `example_index`**. Because the example index is included, IDs are specific to individual generated examples. Thus, the current code does **not guarantee** that all examples from one source meta-prompt or scenario family stay in the same split. Exact deduplication also does not catch every semantic or translated near-duplicate.
-
-For a strict leakage-resistant benchmark, assign a stable `scenario_family_id` shared by related examples, paraphrases, augmentations, and language variants; split by that family ID; then run exact and semantic near-duplicate checks across splits. Keep the test set untouched during model selection.
-
 ## 8. Optional mixed-dataset curation using external sources
 
 The repository also contains a separate mixed-data builder (for example, `build_eu_guard_mixed_v2.py` and later three-way/quota-fill versions). This path is distinct from the synthetic Qwen SFT/DPO generator.
