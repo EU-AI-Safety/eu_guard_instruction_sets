@@ -1,0 +1,8 @@
+# SFT on gold labels (completion-only loss).
+base: base.yaml
+method: sft
+data:
+  train: data/classifier_v1/sft_train.jsonl
+  validation: data/classifier_v1/sft_val.jsonl
+train:
+  output_dir: runs/aya8b_sft

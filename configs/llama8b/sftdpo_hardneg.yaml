@@ -1,0 +1,7 @@
+# SFT->DPO: DPO on top of the merged SFT model (run configs/llama8b/sft.yaml first).
+# The DPO reference model is the SFT policy (LoRA adapter disabled on the merged SFT weights).
+base: dpo_hardneg.yaml
+model:
+  name_or_path: runs/llama8b_sft/merged
+train:
+  output_dir: runs/llama8b_sftdpo_hardneg

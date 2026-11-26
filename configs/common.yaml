@@ -1,0 +1,54 @@
+# Shared settings for all classifier runs (python -m eug_cls.train --config configs/<model>/<run>.yaml).
+# Hyperparameters follow eu-guard-dpo-main/configs/cuda_aya8b.yaml (LoRA r16/a32 all-linear, cosine,
+# 10% warmup, 1 epoch, effective batch 64, bf16, sigmoid DPO beta 0.1, DPO lr 2e-5).
+# Run from the repo root; data comes from scripts/build_classifier_data.py.
+
+data:
+  drop_over_length: true      # drop rows longer than max_length (model's tokenizer + chat template); counts in run_info.json
+  max_train_samples: null
+  max_eval_samples: 1000      # keeps periodic eval cheap; full val is 2,854
+  languages: null
+
+lora:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules: all-linear
+
+merge_adapter: true           # <output_dir>/merged: needed for vLLM eval and as the base of SFT->DPO
+effective_batch_size: 64      # -> gradient_accumulation_steps = 64 / (2 x n_gpus)
+
+hub: null                     # e.g. {repo_id: <you>/eug-cls-aya8b-sft, private: true}; needs HF_TOKEN with write access
+wandb_project: eu-guard-cls   # used when train.report_to=wandb
+wandb_entity: null
+
+train:                        # TrainingArguments kwargs shared by SFT and DPO
+  num_train_epochs: 1
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs: {use_reentrant: false}
+  bf16: true
+  lr_scheduler_type: cosine
+  warmup_steps: 0.1           # float in [0,1) = ratio of total steps (transformers v5)
+  logging_steps: 5
+  eval_strategy: steps
+  eval_steps: 50
+  save_strategy: steps
+  save_steps: 50
+  save_total_limit: 2
+  report_to: none             # set to wandb to track
+  seed: 42
+  ddp_find_unused_parameters: false
+
+sft:                          # used when method: sft
+  learning_rate: 1.0e-4       # usual LoRA SFT lr; DPO keeps the reference's 2e-5
+  max_length: 2048
+  completion_only_loss: true  # loss on the JSON label only, not the system/user prompt
+  packing: false
+
+dpo:                          # used when method: dpo
+  loss_type: [sigmoid]
+  beta: 0.1
+  learning_rate: 2.0e-5
+  max_length: 2048            # over-length pairs are dropped (data.drop_over_length), never truncated

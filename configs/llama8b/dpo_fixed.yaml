@@ -1,0 +1,8 @@
+# DPO from the base model, fixed negatives (see data/classifier_v1/README.md).
+base: base.yaml
+method: dpo
+data:
+  train: data/classifier_v1/dpo_fixed_train.jsonl
+  validation: data/classifier_v1/dpo_fixed_val.jsonl
+train:
+  output_dir: runs/llama8b_dpo_fixed

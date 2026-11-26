@@ -1,0 +1,31 @@
+# CPU smoke test of the full code path with a tiny model; NOT a useful model.
+#   python -m eug_cls.train --config configs/smoke.yaml                       (DPO, hard negatives)
+#   python -m eug_cls.train --config configs/smoke.yaml --set method=sft train.output_dir=runs/smoke_sft
+base: common.yaml
+method: dpo
+model:
+  name_or_path: Qwen/Qwen2.5-0.5B-Instruct
+  dtype: float32
+  attn_implementation: sdpa
+data:
+  train: data/classifier_v1/dpo_hardneg_train.jsonl
+  validation: data/classifier_v1/dpo_hardneg_val.jsonl
+  max_train_samples: 16
+  max_eval_samples: 4
+effective_batch_size: null
+train:
+  output_dir: runs/smoke_dpo
+  max_steps: 3
+  per_device_train_batch_size: 1   # 152k-vocab logits for chosen+rejected OOM a 16 GB laptop at batch 2
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 2
+  gradient_checkpointing: true
+  bf16: false
+  logging_steps: 1
+  eval_steps: 3
+  save_strategy: "no"
+  use_cpu: true
+sft:
+  max_length: 768                  # smoke only: short rows keep CPU memory low (long ones are dropped)
+dpo:
+  max_length: 768

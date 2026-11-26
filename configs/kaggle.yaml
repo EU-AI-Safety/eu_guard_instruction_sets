@@ -1,0 +1,39 @@
+# Overlay for free Kaggle GPUs (2x T4, 16 GB each, no bf16): QLoRA instead of bf16 LoRA.
+#   python -m eug_cls.train --config configs/aya8b/dpo_hardneg.yaml --overlay configs/kaggle.yaml
+# Driven by scripts/kaggle_pipeline.py. Deviations from the reference setup (report them in the paper):
+#   * base model in 4-bit NF4 (QLoRA), fp16 mixed precision; LoRA r16/a32 all-linear and lr unchanged
+#   * training data subsampled (max_train_samples) to fit Kaggle's 12 h sessions / 30 h weekly quota
+#   * effective batch 16 instead of 64, so the subsample still gives a few hundred optimizer steps
+#   * SFT->DPO continues the SFT adapter (model.init_adapter) instead of DPO on merged SFT weights;
+#     the DPO reference is still the SFT policy (TRL keeps a frozen copy of the loaded adapter)
+
+model:
+  load_in_4bit: true
+  bnb_compute_dtype: float16
+  dtype: float16
+
+data:
+  max_train_samples: 4000     # set from the pilot's s/step; see scripts/kaggle_pipeline.py --max-train-samples
+  max_eval_samples: 200
+
+effective_batch_size: 16      # -> gradient_accumulation_steps = 16 / (1 x n_gpus)
+merge_adapter: false          # no merged model on a 4-bit base; eval loads base + adapter
+
+hub:
+  namespace: null             # set by kaggle_pipeline.py (--hf-namespace); adapters persist across sessions there
+  private: true
+
+train:
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  bf16: false
+  fp16: true
+  eval_steps: 50
+  save_steps: 50
+  save_total_limit: 1
+  logging_steps: 5
+
+sft:
+  max_length: 1024            # rows above are dropped (counted in run_info.json), never truncated
+dpo:
+  max_length: 1024

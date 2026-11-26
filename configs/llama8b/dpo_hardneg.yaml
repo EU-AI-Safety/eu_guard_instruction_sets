@@ -1,0 +1,8 @@
+# DPO from the base model, hardneg negatives (see data/classifier_v1/README.md).
+base: base.yaml
+method: dpo
+data:
+  train: data/classifier_v1/dpo_hardneg_train.jsonl
+  validation: data/classifier_v1/dpo_hardneg_val.jsonl
+train:
+  output_dir: runs/llama8b_dpo_hardneg

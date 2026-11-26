@@ -1,0 +1,6 @@
+# CohereLabs/aya-expanse-8b: model only; everything else from ../common.yaml.
+base: ../common.yaml
+model:
+  name_or_path: CohereLabs/aya-expanse-8b   # gated: accept the license on HF and set HF_TOKEN
+  dtype: bfloat16
+  attn_implementation: sdpa   # flash_attention_2 if flash-attn is installed
